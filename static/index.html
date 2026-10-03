@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EdgeMind · Edge Memory &amp; Intelligence</title>
+<link rel="stylesheet" href="/static/style.css?v=em7">
+<link rel="stylesheet" href="/static/user.css?v=em7">
+</head>
+<body>
+
+<div id="app">
+  <header id="topbar">
+    <div class="brand">
+      <img class="brand-img" src="/static/brand/qdrant-brandmark-white.svg" alt="Qdrant">
+      <span class="brand-name">EDGE<b>MIND</b></span>
+      <span class="brand-sep">·</span>
+      <span class="brand-sub">Edge Intelligence Platform</span>
+      <span class="brand-powered">powered by Qdrant Edge</span>
+    </div>
+    <div id="scene-badge" class="scene-badge"></div>
+    <div class="top-right">
+      <button id="replay-btn" class="hidden">⟳ REPLAY MISSION</button>
+      <button id="op-video-btn" class="op-btn" title="upload or choose a video">⤒ VIDEO</button>
+      <button class="mode-toggle" title="switch to the simple user view">
+        <span class="mt-label">USER</span><span class="mt-track"><span class="mt-knob"></span></span>
+      </button>
+      <div id="net-pill" class="net-pill online"><span class="net-dot"></span><span id="net-text">ONLINE</span></div>
+      <button id="net-btn" title="keyboard: O">SIMULATE OFFLINE</button>
+      <div class="unit-tag">
+        <span class="unit-dot"></span> <span id="unit-id">EDGE-01</span> · FIELD UNIT
+      </div>
+    </div>
+  </header>
+
+  <main id="grid">
+    <div id="left-col">
+      <section id="feed-panel" class="panel">
+        <div class="panel-title">LIVE FEED <span id="mission-clock">T+00:00</span></div>
+        <div id="feed-wrap">
+          <video id="feed" src="/footage/mission.mp4" muted playsinline preload="auto"></video>
+          <canvas id="overlay"></canvas>
+          <div class="hud">
+            <div class="hud-corner tl"></div><div class="hud-corner tr"></div>
+            <div class="hud-corner bl"></div><div class="hud-corner br"></div>
+            <div class="hud-rec"><span class="rec-dot"></span>REC</div>
+            <div id="hud-offline" class="hidden">⚠ OFFLINE · AI MEMORY STILL ACTIVE</div>
+            <div id="hud-labels">
+              <div class="hud-labels-title">DETECTOR · OPEN VOCABULARY <span id="vocab-count"></span></div>
+              <div id="watch-lines"></div>
+              <input id="label-input" type="text" autocomplete="off" spellcheck="false"
+                     placeholder="+ teach a concept…">
+            </div>
+            <div id="capture-flash"></div>
+            <div id="pipeline-ticker">
+              <span class="tick-label">LOOP</span>
+              <span class="tick-step">detect <b id="tick-detect">—</b></span><span class="tick-arrow">→</span>
+              <span class="tick-step">embed <b id="tick-embed">—</b></span><span class="tick-arrow">→</span>
+              <span class="tick-step">store <b id="tick-upsert">—</b></span><span class="tick-arrow">→</span>
+              <span class="tick-step">memory <b id="tick-count">0</b></span><span class="tick-arrow">→</span>
+              <span class="tick-step">sync <b id="tick-sync">—</b></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="inventory-panel">
+        <div class="panel-title">OBJECT MEMORY
+          <span class="inv-legend">
+            <i class="sd synced"></i>cloud <i class="sd pending"></i>queued
+            <i class="sd local"></i>device-only <i class="sd conflict"></i>conflict
+          </span>
+          <span id="inv-count">0 unique objects</span>
+        </div>
+        <div id="inv-facets"></div>
+        <div id="inv-rail"></div>
+      </section>
+    </div>
+
+    <aside id="side">
+      <section class="panel" id="map-panel">
+        <div class="panel-title">ON-DEVICE MEMORY <span id="map-count">0 vectors</span></div>
+        <canvas id="map"></canvas>
+        <div id="map-tip" class="hidden"><img alt=""><span></span></div>
+      </section>
+
+      <section class="panel" id="metrics-panel">
+        <div class="metrics-row">
+          <div class="metric"><div class="metric-value" id="m-vectors">0</div><div class="metric-label">Vectors</div></div>
+          <div class="metric"><div class="metric-value" id="m-objects">0</div><div class="metric-label">Objects</div></div>
+          <div class="metric"><div class="metric-value" id="m-disk">0.0<small> MB</small></div><div class="metric-label">Shard On Disk</div></div>
+          <div class="metric"><div class="metric-value" id="m-detect">—</div><div class="metric-label">Detect / Frame</div></div>
+        </div>
+        <div class="lat-strip">
+          <div class="lat-title">SEARCH LATENCY <span class="lat-scale">log scale</span></div>
+          <canvas id="latbar"></canvas>
+        </div>
+      </section>
+
+      <section class="panel" id="search-panel">
+        <div class="panel-title">SEARCH MEMORY <span id="search-badge"></span></div>
+        <div id="query-box">
+          <span class="prompt">›</span>
+          <input id="query-input" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="search what the device remembers…">
+        </div>
+        <div id="scope-row">
+          <span class="scope-label">SCOPE</span>
+          <div id="scope-seg">
+            <button data-scope="edge" class="on">EDGE</button>
+            <button data-scope="cloud">CLOUD</button>
+            <button data-scope="both">EDGE + CLOUD</button>
+          </div>
+        </div>
+        <div id="chips">
+          <button class="chip" data-after="10">a leather lounge chair</button>
+          <button class="chip" data-after="40">bar stools</button>
+          <button class="chip" data-after="56">a pool table</button>
+          <button class="chip" data-after="68">wine bottles on a tray</button>
+          <button class="chip" data-after="100">a bed with pillows</button>
+          <button class="chip" data-after="0">needs repair</button>
+        </div>
+        <div id="results"></div>
+      </section>
+    </aside>
+
+    <aside id="sync-col">
+      <section class="panel" id="link-panel">
+        <div class="panel-title">EDGE ⇄ CLOUD <span id="link-device">edge-01</span></div>
+        <div id="link-status" class="online">
+          <div class="ls-main"><span class="ls-dot"></span><span id="ls-text">ONLINE</span></div>
+          <div id="cloud-kind">—</div>
+          <div class="ls-sub">
+            <span>Local search <b id="ls-search" class="ok">ACTIVE</b></span>
+            <span>Cloud sync <b id="ls-sync" class="ok">LIVE</b></span>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-v" id="s-edge">0</div><div class="stat-l">Edge memories</div><div class="stat-s" id="s-edge-sub">0 objects · 0 frames</div></div>
+          <div class="stat"><div class="stat-v cloud" id="s-cloud">—</div><div class="stat-l">Cloud memories</div><div class="stat-s" id="s-cloud-sub">fleet total</div></div>
+          <div class="stat"><div class="stat-v amber" id="s-pending">0</div><div class="stat-l">Pending sync</div><div class="stat-s" id="s-pending-sub">queue empty</div></div>
+          <div class="stat"><div class="stat-v red" id="s-conflicts">0</div><div class="stat-l">Conflicts</div><div class="stat-s" id="s-conflicts-sub">none open</div></div>
+        </div>
+        <div id="last-sync">Last sync <b id="last-sync-v">never</b></div>
+      </section>
+
+      <section class="panel" id="engine-panel">
+        <div class="panel-title">SYNC ENGINE <span id="engine-state">idle</span></div>
+        <div class="flow">
+          <div class="flow-step"><div class="flow-v" id="f-local">0</div><div class="flow-l">device-only</div></div>
+          <div class="flow-sep">│</div>
+          <div class="flow-step"><div class="flow-v amber" id="f-queued">0</div><div class="flow-l">queued</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-v blue" id="f-syncing">0</div><div class="flow-l">syncing</div></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><div class="flow-v green" id="f-synced">0</div><div class="flow-l">synced</div></div>
+        </div>
+        <div id="progress-wrap">
+          <div id="progress"><div id="progress-bar"></div></div>
+          <div id="progress-text">✓ Up to date</div>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="conflict-panel">
+        <div class="panel-title">⚠ CONFLICTS <span id="conflict-count"></span></div>
+        <div id="conflict-list"></div>
+      </section>
+
+      <section class="panel" id="controls-panel">
+        <div class="ctl-row">
+          <button class="ctl" id="btn-sync">↻ SYNC NOW</button>
+          <button class="ctl" id="btn-hq" title="someone at HQ edits a memory in the cloud">☁ HQ EDIT</button>
+          <button class="ctl warn" id="btn-conflict" title="HQ and this device edit the same memory">⚠ STAGE CONFLICT</button>
+        </div>
+        <div class="ctl-row opts">
+          <span class="opt-label">CONFLICTS</span>
+          <div class="seg" id="seg-conflict">
+            <button data-v="manual" class="on">MANUAL</button>
+            <button data-v="latest">LATEST</button>
+          </div>
+          <span class="opt-label">PRIVACY</span>
+          <div class="seg" id="seg-privacy" title="objects in sensitive rooms stay on device">
+            <button data-v="on" class="on">ON</button>
+            <button data-v="off">OFF</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="activity-panel">
+        <div class="panel-title">SYSTEM ACTIVITY <span id="activity-count"></span></div>
+        <div id="activity"></div>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div id="title-overlay" class="overlay">
+  <div class="title-card">
+    <div class="title-logo">
+      <span class="logo-word">EDGE<b>MIND</b></span>
+    </div>
+    <div class="title-sub">AI memory that works even when the internet doesn't</div>
+    <div class="title-powered">
+      <img class="powered-img" src="/static/brand/qdrant-logo-white.svg" alt="Qdrant"> <span>EDGE</span>
+    </div>
+    <div class="title-hint">press space to begin</div>
+    <div id="title-actions">
+      <button id="ta-start" class="ta-primary">▶ Start <span id="ta-video-name">demo video</span></button>
+      <button id="ta-upload" class="ta-secondary">⤒ Upload your own video</button>
+      <button id="ta-help" class="ta-ghost">How does it work?</button>
+    </div>
+  </div>
+  <button class="mode-toggle ta-mode" title="switch view">
+    <span class="mt-label">USER</span><span class="mt-track"><span class="mt-knob"></span></span>
+  </button>
+</div>
+
+<div id="boot-overlay" class="overlay hidden">
+  <div id="boot-terminal"></div>
+</div>
+
+<div id="zoom-overlay" class="hidden">
+  <div id="zoom-card">
+    <img id="zoom-img" alt="memory">
+    <div id="zoom-meta"></div>
+  </div>
+</div>
+
+<div id="inspect-overlay" class="hidden">
+  <div id="inspect-card">
+    <button id="ins-close">×</button>
+    <img id="ins-img" alt="">
+    <div class="ins-body">
+      <div class="ins-title"><b id="ins-obj"></b><span id="ins-cls"></span><span id="ins-status" class="pill"></span></div>
+      <div id="ins-caption"></div>
+      <div id="ins-grid"></div>
+      <div class="ins-label">OPERATOR NOTE <span>(saved on device first, synced when online)</span></div>
+      <div class="ins-note">
+        <input id="ins-note" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. leg cracked, needs repair">
+        <button id="ins-save">SAVE</button>
+      </div>
+      <div class="ins-actions">
+        <button id="ins-scope"></button>
+        <button id="ins-forget" class="danger">FORGET MEMORY</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<!-- ===================== USER MODE (simple, end-user view) ===================== -->
+<div id="user-app" class="hidden">
+  <div class="u-frame">
+    <header class="u-top">
+      <div class="u-logo"><span class="u-logo-mark"><i></i></span>EdgeMind</div>
+      <nav class="u-nav" id="u-nav">
+        <button data-target="u-overview" class="on">Overview</button>
+        <button data-target="u-camera">Camera</button>
+        <button data-target="u-memory">Memory</button>
+        <button data-target="u-search">Search</button>
+        <button data-target="u-activity">Activity</button>
+      </nav>
+      <div class="u-top-right">
+        <button class="u-icon-btn" id="u-help-btn" title="How does it work?">?</button>
+        <div class="u-bell-wrap">
+          <button class="u-icon-btn" id="u-bell" title="Notifications">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z" fill="currentColor"/></svg>
+            <span id="u-bell-count" class="hidden">0</span>
+          </button>
+          <div id="u-bell-menu" class="hidden">
+            <div class="u-bell-head">Notifications</div>
+            <div id="u-bell-list"><div class="u-empty-sm">Nothing yet</div></div>
+          </div>
+        </div>
+        <button class="mode-toggle" title="switch back to the detailed operator view">
+          <span class="mt-label">USER</span><span class="mt-track"><span class="mt-knob"></span></span>
+        </button>
+        <div class="u-avatar">
+          <span class="u-avatar-img">E1</span>
+          <div><b id="u-dev-name">edge-01</b><small>Field device</small></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="u-body">
+      <aside class="u-side">
+        <div class="u-side-nav">
+          <button data-target="u-overview" class="on"><span class="u-ic">◧</span>Overview</button>
+          <button data-target="u-camera"><span class="u-ic">◉</span>Camera</button>
+          <button data-target="u-memory"><span class="u-ic">❖</span>Memory</button>
+          <button data-target="u-search"><span class="u-ic">⌕</span>Ask your memory</button>
+          <button data-target="u-activity"><span class="u-ic">≋</span>What's happening</button>
+        </div>
+
+        <div class="u-conn" id="u-conn">
+          <div class="u-conn-head">
+            <span>Internet</span>
+            <button class="u-switch on" id="u-net-switch" role="switch" aria-checked="true"><i></i></button>
+          </div>
+          <div class="u-conn-state"><span class="u-conn-dot"></span><b id="u-conn-text">Connected</b></div>
+          <div class="u-conn-sub" id="u-conn-sub">Memories back up to the cloud automatically.</div>
+        </div>
+
+        <div class="u-side-title">What it knows <span id="u-known-count">0</span></div>
+        <div id="u-known"><div class="u-empty-sm">Start a video and things it sees will show up here.</div></div>
+
+        <button id="u-upload-cta" class="u-cta">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3l5 5h-3v6h-4V8H7l5-5Zm-8 14h16v4H4v-4Z" fill="currentColor"/></svg>
+          Upload a video
+        </button>
+      </aside>
+
+      <main class="u-main">
+        <section id="u-overview" class="u-hero">
+          <div class="u-hero-head">
+            <div>
+              <h2>Your device memory</h2>
+              <p id="u-hero-sub">The device watches the video, remembers what it sees, and backs it up when online.</p>
+            </div>
+            <div class="u-hero-right">
+              <span class="u-chip-conn" id="u-chip-conn"><i></i><span>Online</span></span>
+              <button class="u-btn-light" id="u-net-btn">Go offline</button>
+            </div>
+          </div>
+          <div class="u-tiles">
+            <div class="u-tile lime" data-go="u-memory">
+              <div class="u-tile-top"><span class="u-tile-ic">❖</span><button class="u-arrow" aria-label="open">↗</button></div>
+              <div class="u-tile-label">Remembered on this device</div>
+              <div class="u-tile-v" id="u-t-edge">0</div>
+              <div class="u-tile-s" id="u-t-edge-s">Nothing yet</div>
+            </div>
+            <div class="u-tile" data-go="cloud">
+              <div class="u-tile-top"><span class="u-tile-ic">☁</span><button class="u-arrow" aria-label="open">↗</button></div>
+              <div class="u-tile-label">Backed up to cloud</div>
+              <div class="u-tile-v" id="u-t-cloud">0</div>
+              <div class="u-tile-s" id="u-t-cloud-s">—</div>
+            </div>
+            <div class="u-tile" data-go="sync">
+              <div class="u-tile-top"><span class="u-tile-ic">⇡</span><button class="u-arrow" aria-label="sync now">↗</button></div>
+              <div class="u-tile-label">Waiting to upload</div>
+              <div class="u-tile-v" id="u-t-pending">0</div>
+              <div class="u-tile-s" id="u-t-pending-s">All caught up</div>
+            </div>
+            <div class="u-tile" data-go="conflict" id="u-tile-conflict">
+              <div class="u-tile-top"><span class="u-tile-ic">⚖</span><button class="u-arrow" aria-label="decide">↗</button></div>
+              <div class="u-tile-label">Needs your decision</div>
+              <div class="u-tile-v" id="u-t-conflict">0</div>
+              <div class="u-tile-s" id="u-t-conflict-s">All clear</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="u-steps" id="u-steps">
+          <div class="u-step" data-step="see"><span class="u-step-n">1</span><div><b>Sees</b><small>The camera watches the video</small></div></div>
+          <div class="u-step" data-step="remember"><span class="u-step-n">2</span><div><b>Remembers</b><small>Saves each new thing on the device</small></div></div>
+          <div class="u-step" data-step="offline"><span class="u-step-n">3</span><div><b>Works offline</b><small>Search still works with no internet</small></div></div>
+          <div class="u-step" data-step="sync"><span class="u-step-n">4</span><div><b>Backs up</b><small>Uploads to the cloud when online</small></div></div>
+        </section>
+
+        <div class="u-row">
+          <section id="u-camera" class="u-card u-camera">
+            <div class="u-card-head">
+              <div><h3>Live camera</h3><p id="u-video-name">Demo · house walkthrough</p></div>
+              <div class="u-head-actions">
+                <button class="u-pill-btn" id="u-change-video">⤒ Change video</button>
+                <button class="u-pill-btn dark hidden" id="u-replay">⟳ Watch again</button>
+              </div>
+            </div>
+            <div class="u-feed-shell">
+              <div id="u-feed-slot"></div>
+              <span class="u-live" id="u-live"><i></i>LIVE</span>
+              <div class="u-feed-empty" id="u-feed-empty">
+                <div class="u-play-big" id="u-play-big">▶</div>
+                <b>Press play to start</b><small>The device will watch and remember</small>
+              </div>
+            </div>
+            <div class="u-stats">
+              <div><small>Things seen</small><b id="u-s-things">0</b></div>
+              <div><small>Snapshots saved</small><b id="u-s-frames">0</b></div>
+              <div><small>Search speed</small><b id="u-s-speed">—</b></div>
+              <div><small>Storage used</small><b id="u-s-storage">0 MB</b></div>
+            </div>
+            <div class="u-chart-wrap">
+              <div class="u-chart-head">
+                <b>Memory growth</b>
+                <span class="u-legend"><i class="dev"></i>On device <i class="cld"></i>In the cloud</span>
+              </div>
+              <canvas id="u-chart"></canvas>
+              <div id="u-chart-tip" class="hidden"></div>
+            </div>
+            <div class="u-teach">
+              <span class="u-teach-ic">✦</span>
+              <input id="u-teach" type="text" autocomplete="off" placeholder="Teach it something new to look for, e.g. “red backpack”">
+              <button id="u-teach-btn" class="u-btn-dark sm">Add</button>
+            </div>
+          </section>
+
+          <section id="u-memory" class="u-card u-list">
+            <div class="u-card-head">
+              <div><h3>Recently remembered</h3><p>Click anything to see details or add a note</p></div>
+              <button class="u-pill-btn" id="u-see-all">See all</button>
+            </div>
+            <div class="u-legend-pills">
+              <span class="u-pill synced">Backed up</span>
+              <span class="u-pill pending">Waiting</span>
+              <span class="u-pill local">Device only</span>
+              <span class="u-pill conflict">Decide</span>
+            </div>
+            <div id="u-recent">
+              <div class="u-shimmer"></div><div class="u-shimmer"></div><div class="u-shimmer"></div>
+            </div>
+          </section>
+        </div>
+
+        <div class="u-row">
+          <section id="u-search" class="u-card">
+            <div class="u-card-head">
+              <div><h3>Ask your memory</h3><p>Describe something in your own words. Works offline too.</p></div>
+              <div class="u-dd" id="u-scope-dd">
+                <button class="u-dd-btn"><span id="u-scope-label">Search in: This device</span> ▾</button>
+                <div class="u-dd-menu hidden">
+                  <button data-scope="edge" class="on"><b>This device</b><small>Fast, works offline</small></button>
+                  <button data-scope="cloud"><b>Cloud</b><small>Everything backed up by all devices</small></button>
+                  <button data-scope="both"><b>Both</b><small>Device + cloud together</small></button>
+                </div>
+              </div>
+            </div>
+            <div class="u-search-box">
+              <span class="u-search-ic">⌕</span>
+              <input id="u-query" type="text" autocomplete="off" placeholder="e.g. “a leather chair” or “needs repair”">
+              <button id="u-query-btn" class="u-btn-dark">Search</button>
+            </div>
+            <div id="u-chips"><button class="u-chip">needs repair</button></div>
+            <div id="u-search-meta"></div>
+            <div id="u-results">
+              <div class="u-empty">
+                <div class="u-empty-ic">⌕</div>
+                <b>Try asking a question</b><small>Results appear here, with where and when each thing was seen.</small>
+              </div>
+            </div>
+          </section>
+
+          <section id="u-activity" class="u-card">
+            <div class="u-card-head">
+              <div><h3>What's happening</h3><p>A plain-language log of everything the device does</p></div>
+              <div class="u-head-actions">
+                <button class="u-pill-btn" id="u-sync-now">↻ Sync now</button>
+                <button class="u-pill-btn" id="u-try-conflict" title="Simulate HQ and this device writing different notes">⚖ Try a conflict</button>
+              </div>
+            </div>
+            <div id="u-timeline"><div class="u-empty-sm">Activity appears here once a video starts.</div></div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- shared modals (work in both views) -->
+<div id="upload-modal" class="u-modal hidden">
+  <div class="u-modal-card upload-card">
+    <button class="u-modal-x" data-close>×</button>
+    <h3>Add a video</h3>
+    <p class="u-modal-sub">Upload any video. EdgeMind watches it right here on the device and remembers everything it sees.</p>
+    <label id="drop-zone">
+      <input type="file" id="file-input" accept="video/*" hidden>
+      <div class="dz-ic">
+        <svg viewBox="0 0 24 24" width="30" height="30"><path d="M12 3l5 5h-3v6h-4V8H7l5-5Zm-8 14h16v4H4v-4Z" fill="currentColor"/></svg>
+      </div>
+      <b>Drag a video here, or <u>click to choose</u></b>
+      <small>MP4, MOV, WebM, MKV… up to 1 GB · the first 10 minutes are used</small>
+    </label>
+    <div id="up-progress" class="hidden">
+      <div class="up-row"><span id="up-name">video.mp4</span><span id="up-pct">0%</span></div>
+      <div class="up-bar"><i id="up-bar"></i></div>
+      <div id="up-status">Uploading…</div>
+    </div>
+    <div class="up-list-title">Choose a video to watch</div>
+    <div id="video-list"><div class="u-shimmer"></div></div>
+    <div class="up-foot">
+      <span id="up-hint">Starting a new video gives the device a fresh memory.</span>
+      <button id="up-start" class="u-btn-dark" disabled>▶ Start watching</button>
+    </div>
+  </div>
+</div>
+
+<div id="conflict-modal" class="u-modal hidden">
+  <div class="u-modal-card conflict-card-u">
+    <button class="u-modal-x" data-close>×</button>
+    <div class="cm-body" id="cm-body">
+      <div class="cm-head">
+        <img id="cm-img" alt="">
+        <div>
+          <h3>Which note should we keep?</h3>
+          <p class="u-modal-sub">While apart, <b>this device</b> and <b>HQ</b> wrote different notes for the <b id="cm-cls">item</b>. Pick the one that's right.</p>
+        </div>
+      </div>
+      <div class="cm-options">
+        <div class="cm-opt" data-choice="edge">
+          <span class="cm-badge hidden">Newest</span>
+          <div class="cm-who"><span class="cm-ic">▣</span>This device</div>
+          <div class="cm-val" id="cm-edge-v"></div>
+          <div class="cm-time" id="cm-edge-t"></div>
+          <button class="u-btn-light">Keep this</button>
+        </div>
+        <div class="cm-opt" data-choice="cloud">
+          <span class="cm-badge hidden">Newest</span>
+          <div class="cm-who"><span class="cm-ic">☁</span>HQ (cloud)</div>
+          <div class="cm-val" id="cm-cloud-v"></div>
+          <div class="cm-time" id="cm-cloud-t"></div>
+          <button class="u-btn-light">Keep this</button>
+        </div>
+      </div>
+      <div class="cm-foot">
+        <span id="cm-more"></span>
+        <button class="u-btn-ghost" data-close>Decide later</button>
+        <button class="u-btn-dark" id="cm-latest">Keep the newest</button>
+      </div>
+    </div>
+    <div class="cm-done hidden" id="cm-done">
+      <div class="cm-check">✓</div>
+      <b>Saved!</b><small>Both the device and the cloud now agree.</small>
+    </div>
+  </div>
+</div>
+
+<div id="help-modal" class="u-modal hidden">
+  <div class="u-modal-card help-card">
+    <button class="u-modal-x" data-close>×</button>
+    <h3>How EdgeMind works</h3>
+    <p class="u-modal-sub">Think of it as a camera with a memory. It does not need the internet to remember or to answer questions.</p>
+    <div class="help-steps">
+      <div><span>1</span><b>It watches</b><small>The device looks at every frame of the video and spots objects like chairs, lamps or bottles.</small></div>
+      <div><span>2</span><b>It remembers</b><small>Each new thing is saved <em>on the device</em> with a picture and a short description.</small></div>
+      <div><span>3</span><b>Ask anything</b><small>Type what you're looking for in plain words. Answers come in milliseconds, even offline.</small></div>
+      <div><span>4</span><b>It backs up</b><small>When online, memories upload to the cloud. Offline changes wait in line and upload later.</small></div>
+      <div><span>5</span><b>You decide</b><small>If HQ and the device change the same note, you pick which one to keep.</small></div>
+      <div><span>🔒</span><b>Privacy</b><small>Things seen in private rooms (bathroom, bedroom) stay on the device only.</small></div>
+    </div>
+    <div class="help-try">
+      <b>Try it:</b> start the video → click <em>Go offline</em> → search “bar stools” (still works!) →
+      click <em>Try a conflict</em> → click <em>Go online</em> → pick which note to keep.
+    </div>
+    <div class="up-foot"><span></span><button class="u-btn-dark" data-close>Got it</button></div>
+  </div>
+</div>
+
+<div id="closing-overlay" class="overlay hidden">
+  <div class="title-card">
+    <div class="title-logo">
+      <span class="logo-word">EDGE<b>MIND</b></span>
+    </div>
+    <div class="closing-tag">Remember locally. Sync intelligently.</div>
+    <div class="closing-points">
+      <span>Local-First</span><i>·</i><span>Offline Search</span><i>·</i><span>Sync When Connected</span><i>·</i><span>Conflict-Aware</span>
+    </div>
+    <div class="closing-url">qdrant edge + qdrant server</div>
+  </div>
+</div>
+
+<script src="/static/app.js?v=em7"></script>
+<script src="/static/user.js?v=em7"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.venv/
+edge-data/
+cloud-data/
+footage/*.mp4
+footage/uploads/
+footage/projection.npz
+__pycache__/
+*.pt
+mobileclip_blt.ts
+docs/screenshots/edge-vsd-demo-final.mp4
